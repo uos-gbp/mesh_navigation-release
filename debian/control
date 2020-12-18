@@ -1,0 +1,12 @@
+Source: ros-melodic-mesh-map
+Section: misc
+Priority: optional
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-melodic-catkin, ros-melodic-dynamic-reconfigure, ros-melodic-geometry-msgs, ros-melodic-mesh-client, ros-melodic-mesh-msgs-conversions, ros-melodic-pluginlib, ros-melodic-roscpp, ros-melodic-tf2-ros, ros-melodic-visualization-msgs, ros-melodic-xmlrpcpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-melodic-mesh-map
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-melodic-dynamic-reconfigure, ros-melodic-geometry-msgs, ros-melodic-mesh-client, ros-melodic-mesh-msgs-conversions, ros-melodic-pluginlib, ros-melodic-roscpp, ros-melodic-tf2-ros, ros-melodic-visualization-msgs, ros-melodic-xmlrpcpp
+Description: The mesh_map package
