@@ -1,0 +1,12 @@
+Source: ros-noetic-mbf-mesh-core
+Section: misc
+Priority: optional
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-noetic-catkin, ros-noetic-mbf-abstract-core, ros-noetic-mesh-map
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-noetic-mbf-mesh-core
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-noetic-mbf-abstract-core, ros-noetic-mesh-map
+Description: The mbf_mesh_core package
