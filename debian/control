@@ -1,0 +1,12 @@
+Source: ros-noetic-mesh-map
+Section: misc
+Priority: optional
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-noetic-catkin, ros-noetic-dynamic-reconfigure, ros-noetic-geometry-msgs, ros-noetic-mesh-client, ros-noetic-mesh-msgs-conversions, ros-noetic-pluginlib, ros-noetic-roscpp, ros-noetic-tf2-ros, ros-noetic-visualization-msgs, ros-noetic-xmlrpcpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-noetic-mesh-map
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-noetic-dynamic-reconfigure, ros-noetic-geometry-msgs, ros-noetic-mesh-client, ros-noetic-mesh-msgs-conversions, ros-noetic-pluginlib, ros-noetic-roscpp, ros-noetic-tf2-ros, ros-noetic-visualization-msgs, ros-noetic-xmlrpcpp
+Description: The mesh_map package
