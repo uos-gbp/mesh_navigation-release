@@ -1,0 +1,12 @@
+Source: ros-noetic-mesh-navigation
+Section: misc
+Priority: optional
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-noetic-catkin
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-noetic-mesh-navigation
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-noetic-dijkstra-mesh-planner, ros-noetic-mbf-mesh-core, ros-noetic-mbf-mesh-nav, ros-noetic-mesh-client, ros-noetic-mesh-controller, ros-noetic-mesh-layers, ros-noetic-mesh-map, ros-noetic-wave-front-planner
+Description: The mesh_navigation package provides a layered mesh_map implementation, a Move Base Flex mesh navigation server, as well as mesh navigation plugins for path planning and navigation control.
