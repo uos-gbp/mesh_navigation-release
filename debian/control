@@ -1,0 +1,12 @@
+Source: ros-melodic-mbf-mesh-core
+Section: misc
+Priority: optional
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-melodic-catkin, ros-melodic-mbf-abstract-core, ros-melodic-mesh-map
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-melodic-mbf-mesh-core
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-melodic-mbf-abstract-core, ros-melodic-mesh-map
+Description: The mbf_mesh_core package
