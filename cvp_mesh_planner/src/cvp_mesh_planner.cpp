@@ -42,23 +42,24 @@
 #include <mesh_map/util.h>
 #include <pluginlib/class_list_macros.h>
 
-#include "wave_front_planner/wave_front_planner.h"
+#include "cvp_mesh_planner/cvp_mesh_planner.h"
 //#define DEBUG
 //#define USE_UPDATE_WITH_S
+//#define USE_UPDATE_FMM
 
-PLUGINLIB_EXPORT_CLASS(wave_front_planner::WaveFrontPlanner, mbf_mesh_core::MeshPlanner);
+PLUGINLIB_EXPORT_CLASS(cvp_mesh_planner::CVPMeshPlanner, mbf_mesh_core::MeshPlanner);
 
-namespace wave_front_planner
+namespace cvp_mesh_planner
 {
-WaveFrontPlanner::WaveFrontPlanner()
-{
-}
-
-WaveFrontPlanner::~WaveFrontPlanner()
+CVPMeshPlanner::CVPMeshPlanner()
 {
 }
 
-uint32_t WaveFrontPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geometry_msgs::PoseStamped& goal,
+CVPMeshPlanner::~CVPMeshPlanner()
+{
+}
+
+uint32_t CVPMeshPlanner::makePlan(const geometry_msgs::PoseStamped& start, const geometry_msgs::PoseStamped& goal,
                                     double tolerance, std::vector<geometry_msgs::PoseStamped>& plan, double& cost,
                                     std::string& message)
 {
@@ -123,13 +124,13 @@ uint32_t WaveFrontPlanner::makePlan(const geometry_msgs::PoseStamped& start, con
   return outcome;
 }
 
-bool WaveFrontPlanner::cancel()
+bool CVPMeshPlanner::cancel()
 {
   cancel_planning = true;
   return true;
 }
 
-bool WaveFrontPlanner::initialize(const std::string& plugin_name,
+bool CVPMeshPlanner::initialize(const std::string& plugin_name,
                                   const boost::shared_ptr<mesh_map::MeshMap>& mesh_map_ptr)
 {
   mesh_map = mesh_map_ptr;
@@ -146,16 +147,16 @@ bool WaveFrontPlanner::initialize(const std::string& plugin_name,
   direction = lvr2::DenseVertexMap<float>(mesh.nextVertexIndex(), 0);
   // TODO check all map dependencies! (loaded layers etc...)
 
-  reconfigure_server_ptr = boost::shared_ptr<dynamic_reconfigure::Server<wave_front_planner::WaveFrontPlannerConfig>>(
-      new dynamic_reconfigure::Server<wave_front_planner::WaveFrontPlannerConfig>(private_nh));
+  reconfigure_server_ptr = boost::shared_ptr<dynamic_reconfigure::Server<cvp_mesh_planner::CVPMeshPlannerConfig>>(
+      new dynamic_reconfigure::Server<cvp_mesh_planner::CVPMeshPlannerConfig>(private_nh));
 
-  config_callback = boost::bind(&WaveFrontPlanner::reconfigureCallback, this, _1, _2);
+  config_callback = boost::bind(&CVPMeshPlanner::reconfigureCallback, this, _1, _2);
   reconfigure_server_ptr->setCallback(config_callback);
 
   return true;
 }
 
-void WaveFrontPlanner::reconfigureCallback(wave_front_planner::WaveFrontPlannerConfig& cfg, uint32_t level)
+void CVPMeshPlanner::reconfigureCallback(cvp_mesh_planner::CVPMeshPlannerConfig& cfg, uint32_t level)
 {
   ROS_INFO_STREAM("New height diff layer config through dynamic reconfigure.");
   if (first_config)
@@ -167,7 +168,7 @@ void WaveFrontPlanner::reconfigureCallback(wave_front_planner::WaveFrontPlannerC
   config = cfg;
 }
 
-void WaveFrontPlanner::computeVectorMap()
+void CVPMeshPlanner::computeVectorMap()
 {
   const auto& mesh = mesh_map->mesh();
   const auto& face_normals = mesh_map->faceNormals();
@@ -204,14 +205,14 @@ void WaveFrontPlanner::computeVectorMap()
   mesh_map->setVectorMap(vector_map);
 }
 
-uint32_t WaveFrontPlanner::waveFrontPropagation(const mesh_map::Vector& start, const mesh_map::Vector& goal,
+uint32_t CVPMeshPlanner::waveFrontPropagation(const mesh_map::Vector& start, const mesh_map::Vector& goal,
                                                 std::list<std::pair<mesh_map::Vector, lvr2::FaceHandle>>& path)
 {
   return waveFrontPropagation(start, goal, mesh_map->edgeDistances(), mesh_map->vertexCosts(), path, potential,
                               predecessors);
 }
 
-inline bool WaveFrontPlanner::waveFrontUpdateWithS(lvr2::DenseVertexMap<float>& distances,
+inline bool CVPMeshPlanner::waveFrontUpdateWithS(lvr2::DenseVertexMap<float>& distances,
                                                    const lvr2::DenseEdgeMap<float>& edge_weights,
                                                    const lvr2::VertexHandle& v1, const lvr2::VertexHandle& v2,
                                                    const lvr2::VertexHandle& v3)
@@ -331,7 +332,7 @@ inline bool WaveFrontPlanner::waveFrontUpdateWithS(lvr2::DenseVertexMap<float>& 
   return false;
 }
 
-inline bool WaveFrontPlanner::waveFrontUpdate(lvr2::DenseVertexMap<float>& distances,
+inline bool CVPMeshPlanner::waveFrontUpdate(lvr2::DenseVertexMap<float>& distances,
                                               const lvr2::DenseEdgeMap<float>& edge_weights,
                                               const lvr2::VertexHandle& v1, const lvr2::VertexHandle& v2,
                                               const lvr2::VertexHandle& v3)
@@ -520,7 +521,100 @@ inline bool WaveFrontPlanner::waveFrontUpdate(lvr2::DenseVertexMap<float>& dista
   return false;
 }
 
-uint32_t WaveFrontPlanner::waveFrontPropagation(const mesh_map::Vector& original_start,
+
+inline bool CVPMeshPlanner::waveFrontUpdateFMM(
+    lvr2::DenseVertexMap<float> &distances,
+    const lvr2::DenseEdgeMap<float> &edge_weights,
+    const lvr2::VertexHandle &v1tmp,
+    const lvr2::VertexHandle &v2tmp,
+    const lvr2::VertexHandle &v3)
+{
+  const auto& mesh = mesh_map->mesh();
+
+  bool v1_smaller = distances[v1tmp] < distances[v2tmp];
+  const lvr2::VertexHandle v1 = v1_smaller ? v1tmp : v2tmp;
+  const lvr2::VertexHandle v2 = v1_smaller ? v2tmp : v1tmp;
+
+  const double u1 = distances[v1];
+  const double u2 = distances[v2];
+  const double u3 = distances[v3];
+
+  const lvr2::OptionalEdgeHandle e12h = mesh.getEdgeBetween(v1, v2);
+  const double c = edge_weights[e12h.unwrap()];
+  const double c_sq = c * c;
+
+  const lvr2::OptionalEdgeHandle e13h = mesh.getEdgeBetween(v1, v3);
+  const double b = edge_weights[e13h.unwrap()];
+  const double b_sq = b * b;
+
+  const lvr2::OptionalEdgeHandle e23h = mesh.getEdgeBetween(v2, v3);
+  const double a = edge_weights[e23h.unwrap()];
+  const double a_sq = a * a;
+
+  const double delta_u = u2 - u1;
+  const double cos_theta = (a_sq + b_sq - c_sq) / (2 * a * b);
+
+  const double k0 = a_sq + b_sq - 2 * a * b * cos_theta;
+  const double k1 = 2 * b * delta_u * (a * cos_theta - b);
+  const double k2 = b_sq * (delta_u * delta_u - a_sq * (1 - cos_theta * cos_theta));
+
+  double t;
+  const double r = k1 * k1 - 4 * k0 * k2;
+  if(r < 0)
+  {
+    t = -k1 / (2 * k0);
+  }
+  else
+  {
+    t = (-k1 + sqrt(r)) / (2 * k0);
+  }
+
+  const double e = b * (t - delta_u) / t;
+
+  if(delta_u < t && (e < a / cos_theta) && (e > a * cos_theta))
+  {
+    const double u3_tmp = u1 + t;
+    if(u3_tmp < u3)
+    {
+      auto fH = mesh.getFaceBetween(v1, v2, v3).unwrap();
+      cutting_faces.insert(v3, fH);
+      predecessors[v3] = v1;
+      distances[v3] = static_cast<float>(u3_tmp);
+      const double theta = acos(cos_theta);
+      const double phi = asin((e * sin(theta)) / sqrt(a_sq * e * e - 2 * a * cos_theta));
+      direction[v3] = theta + phi - M_PI_2;
+      return true;
+    }
+  }
+  else {
+    const double u1t = u1 + b;
+    const double u2t = u2 + a;
+
+    if (u1t < u2t) {
+      if (u1t < u3) {
+        auto fH = mesh.getFaceBetween(v1, v2, v3).unwrap();
+        cutting_faces.insert(v3, fH);
+        predecessors[v3] = v1;
+        distances[v3] = static_cast<float>(u1t);
+        direction[v3] = 0;
+        return true;
+      }
+    } else {
+      if (u2t < u3) {
+        auto fH = mesh.getFaceBetween(v1, v2, v3).unwrap();
+        cutting_faces.insert(v3, fH);
+        predecessors[v3] = v2;
+        distances[v3] = static_cast<float>(u2t);
+        direction[v3] = 0;
+        return true;
+      }
+    }
+  }
+
+return false;
+}
+
+uint32_t CVPMeshPlanner::waveFrontPropagation(const mesh_map::Vector& original_start,
                                                 const mesh_map::Vector& original_goal,
                                                 const lvr2::DenseEdgeMap<float>& edge_weights,
                                                 const lvr2::DenseVertexMap<float>& costs,
@@ -658,8 +752,7 @@ uint32_t WaveFrontPlanner::waveFrontPropagation(const mesh_map::Vector& original
         // one vertex is not in the fixed set
         if (fixed[a] && fixed[b] && fixed[c])
         {
-// The face's vertices are already optimal
-// with respect to the distance
+          // All distance values of the face are already fixed
 #ifdef DEBUG
           mesh_map->publishDebugFace(fh, mesh_map::color(1, 0, 0), "fmm_fixed_" + std::to_string(fixed_cnt++));
 #endif
@@ -670,6 +763,8 @@ uint32_t WaveFrontPlanner::waveFrontPropagation(const mesh_map::Vector& original
           // c is free
 #ifdef USE_UPDATE_WITH_S
           if (waveFrontUpdateWithS(distances, edge_weights, a, b, c))
+#elif defined USE_UPDATE_FMM
+          if (waveFrontUpdateFMM(distances, edge_weights, a, b, c))
 #else
           if (waveFrontUpdate(distances, edge_weights, a, b, c))
 #endif
@@ -686,6 +781,8 @@ uint32_t WaveFrontPlanner::waveFrontPropagation(const mesh_map::Vector& original
           // b is free
 #ifdef USE_UPDATE_WITH_S
           if (waveFrontUpdateWithS(distances, edge_weights, c, a, b))
+#elif defined USE_UPDATE_FMM
+          if (waveFrontUpdateFMM(distances, edge_weights, c, a, b))
 #else
           if (waveFrontUpdate(distances, edge_weights, c, a, b))
 #endif
@@ -702,6 +799,8 @@ uint32_t WaveFrontPlanner::waveFrontPropagation(const mesh_map::Vector& original
           // a if free
 #ifdef USE_UPDATE_WITH_S
           if (waveFrontUpdateWithS(distances, edge_weights, b, c, a))
+#elif defined USE_UPDATE_FMM
+          if (waveFrontUpdateFMM(distances, edge_weights, b, c, a))
 #else
           if (waveFrontUpdate(distances, edge_weights, b, c, a))
 #endif
@@ -814,5 +913,5 @@ uint32_t WaveFrontPlanner::waveFrontPropagation(const mesh_map::Vector& original
   return mbf_msgs::GetPathResult::SUCCESS;
 }
 
-} /* namespace wave_front_planner */
+} /* namespace cvp_mesh_planner */
 
