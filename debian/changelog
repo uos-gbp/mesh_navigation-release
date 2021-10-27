@@ -1,0 +1,13 @@
+ros-melodic-cvp-mesh-planner (1.0.1-1bionic) bionic; urgency=high
+
+  * rename to cvp_mesh_planner
+
+ -- Sebastian Pütz <spuetz@uos.de>  Tue, 26 Oct 2021 22:00:00 -0000
+
+ros-melodic-cvp-mesh-planner (1.0.0-1bionic) bionic; urgency=high
+
+  * Initial release
+
+ -- Sebastian Pütz <spuetz@uos.de>  Tue, 15 Dec 2020 23:00:00 -0000
+
+
