@@ -1,0 +1,12 @@
+Source: ros-melodic-mesh-client
+Section: misc
+Priority: optional
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), curl, libcurl4-openssl-dev, libeigen3-dev, libjsoncpp-dev, pkg-config, ros-melodic-catkin, ros-melodic-lvr2, ros-melodic-roscpp
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-melodic-mesh-client
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, curl, libcurl4-openssl-dev, libeigen3-dev, libjsoncpp-dev, ros-melodic-lvr2, ros-melodic-roscpp
+Description: The mesh_client package
