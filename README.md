@@ -10,6 +10,7 @@ on the layered mesh map are provided.
 Maintainer: [Sebastian Pütz](mailto:spuetz@uos.de)  
 Author: [Sebastian Pütz](mailto:spuetz@uos.de)
 
+* [Publications](#publications)
 * [Installation](#installation)
 * [Software Stack](#software-stack)
 * [Mesh Map](#mesh-map)
@@ -19,9 +20,34 @@ Author: [Sebastian Pütz](mailto:spuetz@uos.de)
 * [Demos](#demos)
 * [Build Status](#build-status)
 
-
-
 <img title="Demo Gif" src="docs/images/demo.gif?raw=true" alt="Demo Gif" width="600">
+
+## Publications
+Please reference the following papers when using the navigation stack in your scientific work.
+
+#### Continuous Shortest Path Vector Field Navigation on 3D Triangular Meshes for Mobile Robots
+```  
+@inproceedings{puetz21cvp,
+    author = {Pütz, Sebastian and Wiemann, Thomas and Kleine Piening, Malte and Hertzberg, Joachim},
+    title = {Continuous Shortest Path Vector Field Navigation on 3D Triangular Meshes for Mobile Robots},
+    booktitle = {2021 IEEE International Conference on Robotics and Automation (ICRA)},
+    year = 2021,
+    url = {https://github.com/uos/mesh_navigation},
+    note = {Software available at \url{https://github.com/uos/mesh_navigation}}
+}
+```
+#### Move Base Flex: A Highly Flexible Navigation Framework for Mobile Robots
+```  
+@inproceedings{puetz18mbf,
+    author = {Sebastian Pütz and Jorge Santos Simón and Joachim Hertzberg},
+    title = {{Move Base Flex}: A Highly Flexible Navigation Framework for Mobile Robots},
+    booktitle = {2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+    year = 2018,
+    month = {October},
+    url = {https://github.com/magazino/move_base_flex},
+    note = {Software available at \url{https://github.com/magazino/move_base_flex}}
+}
+```
 
 ## Installation
 
@@ -82,11 +108,12 @@ The package structure is as follows:
   vertex to the goal pose can be computed. This leads in a sub-optimal potential field, which highly depends on the mesh 
   structure.
 
-- `wave_front_planner` contains a Fast Marching Method (FMM) wave front path planner to take the 2D-manifold into account.
+- `cvp_mesh_planner` contains a Fast Marching Method (FMM) wave front path planner to take the 2D-manifold into account.
   This planner is able to plan over the surface, due to that it results in shorter paths than the `dijkstra_mesh_planner`,
-  since it is not restricted to the edges or topology of the mesh. A comparison is shown below.
+  since it is not restricted to the edges or topology of the mesh. A comparison is shown below. Please refer to the paper
+  `Continuous Shortest Path Vector Field Navigation on 3D Triangular Meshes for Mobile Robots` which is stated above.
 
-- `mesh_client` Is an experimental package to load navigation meshes only from a mesh server.
+- `mesh_client` Is an experimental package to additionally load navigation meshes from a server.
 
 ### Path Planning and Motion Control
 
@@ -123,11 +150,11 @@ Currently the following planners are available:
     type: 'dijkstra_mesh_planner/DijkstraMeshPlanner'
 ```
 
-#### Vector Field Planner
+#### Continuous Vector Field Planner
 
 ```
-  - name: 'wave_front_planner'
-    type: 'wave_front_planner/WaveFrontPlanner'
+  - name: 'cvp_mesh_planner'
+    type: 'cvp_mesh_planner/CVPMeshPlanner'
 ```
 
 #### MMP Planner
