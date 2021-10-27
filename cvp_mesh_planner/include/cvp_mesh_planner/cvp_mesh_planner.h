@@ -41,25 +41,25 @@
 #include <mbf_mesh_core/mesh_planner.h>
 #include <mbf_msgs/GetPathResult.h>
 #include <mesh_map/mesh_map.h>
-#include <wave_front_planner/WaveFrontPlannerConfig.h>
+#include <cvp_mesh_planner/CVPMeshPlannerConfig.h>
 #include <nav_msgs/Path.h>
 
-namespace wave_front_planner
+namespace cvp_mesh_planner
 {
-class WaveFrontPlanner : public mbf_mesh_core::MeshPlanner
+class CVPMeshPlanner : public mbf_mesh_core::MeshPlanner
 {
 public:
-  typedef boost::shared_ptr<wave_front_planner::WaveFrontPlanner> Ptr;
+  typedef boost::shared_ptr<cvp_mesh_planner::CVPMeshPlanner> Ptr;
 
   /**
    * @brief Constructor
    */
-  WaveFrontPlanner();
+  CVPMeshPlanner();
 
   /**
    * @brief Destructor
    */
-  virtual ~WaveFrontPlanner();
+  virtual ~CVPMeshPlanner();
 
   /**
    * @brief Compute a continuous vector field and geodesic path on the mesh's surface
@@ -120,7 +120,7 @@ protected:
                                 lvr2::DenseVertexMap<lvr2::VertexHandle>& predecessors);
 
   /**
-   * Fast Marching Method update step using the Hesse normal form to determine if the direction vector is cutting the current triangle
+   * Single source update step using the Hesse normal form to determine if the direction vector is cutting the current triangle
    * @param distances Distance map to the goal which stores the current state of all distances to the goal
    * @param edge_weights Distances assigned to each edge
    * @param v1 The first vertex of the triangle
@@ -132,9 +132,20 @@ protected:
                                    const lvr2::DenseEdgeMap<float>& edge_weights, const lvr2::VertexHandle& v1,
                                    const lvr2::VertexHandle& v2, const lvr2::VertexHandle& v3);
 
-
   /**
    * Fast Marching Method update step using the Law of Cosines to determine if the direction vector is cutting the current triangle
+   * @param distances Distance map to the goal which stores the current state of all distances to the goal
+   * @param edge_weights Distances assigned to each edge
+   * @param v1 The first vertex of the triangle
+   * @param v2 The second vertex of the triangle
+   * @param v3 The thrid vertex of the triangle
+   * @return true if the newly computed distance is shorter than before and if the current triangle is cut
+   */
+  inline bool waveFrontUpdateFMM(lvr2::DenseVertexMap<float>& distances, const lvr2::DenseEdgeMap<float>& edge_weights,
+                              const lvr2::VertexHandle& v1, const lvr2::VertexHandle& v2, const lvr2::VertexHandle& v3);
+
+  /**
+   * Single source update step using the Law of Cosines to determine if the direction vector is cutting the current triangle
    * @param distances Distance map to the goal which stores the current state of all distances to the goal
    * @param edge_weights Distances assigned to each edge
    * @param v1 The first vertex of the triangle
@@ -153,7 +164,7 @@ protected:
   /**
    * @brief Dynamic reconfigure callback
    */
-  void reconfigureCallback(wave_front_planner::WaveFrontPlannerConfig& cfg, uint32_t level);
+  void reconfigureCallback(cvp_mesh_planner::CVPMeshPlannerConfig& cfg, uint32_t level);
 
 private:
 
@@ -185,16 +196,16 @@ private:
   float goal_dist_offset;
 
   //! shared pointer to dynamic reconfigure server
-  boost::shared_ptr<dynamic_reconfigure::Server<wave_front_planner::WaveFrontPlannerConfig>> reconfigure_server_ptr;
+  boost::shared_ptr<dynamic_reconfigure::Server<cvp_mesh_planner::CVPMeshPlannerConfig>> reconfigure_server_ptr;
 
   //! dynamic reconfigure callback function binding
-  dynamic_reconfigure::Server<wave_front_planner::WaveFrontPlannerConfig>::CallbackType config_callback;
+  dynamic_reconfigure::Server<cvp_mesh_planner::CVPMeshPlannerConfig>::CallbackType config_callback;
 
   //! indicates if dynamic reconfigure has been called the first time
   bool first_config;
 
   //! the current dynamic reconfigure planner configuration
-  WaveFrontPlannerConfig config;
+  CVPMeshPlannerConfig config;
 
   //! theta angles to the source of the wave front propagation
   lvr2::DenseVertexMap<float> direction;
@@ -212,6 +223,6 @@ private:
   lvr2::DenseVertexMap<float> potential;
 };
 
-}  // namespace wave_front_planner
+}  // namespace cvp_mesh_planner
 
-#endif  // MESH_NAVIGATION__WAVE_FRONT_PLANNER_H
+#endif  // MESH_NAVIGATION__CVP_MESH_PLANNER_H
